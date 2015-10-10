@@ -1,6 +1,5 @@
 #include <SPI.h>
-#include <MFRC522.h>
-#include <AccelStepper.h>
+#include "./MFRC522.h"
 
 //CardReader Constants
 #define RST_PIN 9 
@@ -9,31 +8,15 @@
 String cards[2] = {"15318785229", "103113543"}; //Accepted Keys
 byte cardread[4]; //To store read key
 
-//Motor Constants
-#define HALFSTEP 8
-
-// Motor pin definitions
-#define motorPin1  3     // IN1 on the ULN2003 driver 1
-#define motorPin2  4     // IN2 on the ULN2003 driver 1
-#define motorPin3  5     // IN3 on the ULN2003 driver 1
-#define motorPin4  6     // IN4 on the ULN2003 driver 1
-
 //CardReader Initialize
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 MFRC522::MIFARE_Key key;
-
-//Motor Initialize
-//pin sequence IN1-IN3-IN2-IN4 for using the AccelStepper with 28BYJ-48
-AccelStepper stepper1(HALFSTEP, motorPin1, motorPin3, motorPin2, motorPin4);
 
 void setup(){
   Serial.begin(9600); // Initialize serial communications with the PC
   SPI.begin();        // Init SPI bus
   mfrc522.PCD_Init(); // Init MFRC522 card
   mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max); //Set Max Gain ?working?
-
-  stepper1.setMaxSpeed(1000.0); //Max Speed
-  stepper1.setAcceleration(100.0); //100 steps/s^2
 }
 
 void loop() {
@@ -54,9 +37,7 @@ void loop() {
     //If they're the same print match
     if(compare_arrays(cards, cardread)){
       Serial.println("Match!");
-      turn_motor();
     }
-    //stepper1.run(); //required to turn motor
     
     Serial.println();
     
@@ -90,14 +71,5 @@ boolean compare_arrays(String master[], byte readcard[]){
     }
   }
    return false;
-}
-
-void turn_motor(){
-  Serial.println("Moving!");
-  stepper1.move(4076); //4096 is what it SHOULD be
-  stepper1.runToPosition();
-  delay(2000);
-  stepper1.move(-4076);
-  stepper1.runToPosition();
 }
 
