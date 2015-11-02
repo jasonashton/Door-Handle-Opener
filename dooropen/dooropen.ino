@@ -30,6 +30,10 @@ MFRC522::MIFARE_Key key;
 
 void setup(){
   Serial.begin(9600); // Initialize serial communications with the PC
+  pinMode(2,OUTPUT); // Enable
+  pinMode(3,OUTPUT); // Step
+  pinMode(4,OUTPUT); // Dir
+  digitalWrite(2,HIGH); // Set Enable low
   SPI.begin();        // Init SPI bus
   mfrc522.PCD_Init(); // Init MFRC522 card
   mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max); //Set Max Gain ?working?
@@ -53,9 +57,16 @@ void loop() {
     //If they're the same print match
     if(compare_arrays(cards, cardread)){
       Serial.println("Match!");
+      digitalWrite(2, LOW);
+      for(int i=0; i<=200; i++){
+        digitalWrite(3,HIGH); // Output high
+        delay(5); // Wait
+        digitalWrite(3,LOW); // Output low
+        delay(5); // Wait
+      }
+      digitalWrite(2, HIGH);
     }
     
-    Serial.println();
     
 }
 
