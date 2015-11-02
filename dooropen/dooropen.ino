@@ -1,25 +1,14 @@
-/*
-+----------+---------+-----+
-| Signal   | MFRC522 | Uno |
-+----------+---------+-----+
-| RST      | RST     | 9   |
-+----------+---------+-----+
-| SPI SS   | SDA     | 10  |
-+----------+---------+-----+
-| SPI MOSI | MOSI    | 11  |
-+----------+---------+-----+
-| SPI MISO | MISO    | 12  |
-+----------+---------+-----+
-| SPI SCK  | SCK     | 13  |
-+----------+---------+-----+
-*/
-
 #include <SPI.h>
 #include <MFRC522.h>
 
 //CardReader Constants
 #define RST_PIN 9 
 #define SS_PIN 10
+
+//Motor Drive Contants
+#define ENABLE_PIN 2
+#define STEP_PIN 3
+#define DIR_PIN 4
 
 String cards[2] = {"15318785229", "103113543"}; //Accepted Keys
 byte cardread[4]; //To store read key
@@ -29,11 +18,12 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 MFRC522::MIFARE_Key key;
 
 void setup(){
-  Serial.begin(9600); // Initialize serial communications with the PC
-  pinMode(2,OUTPUT); // Enable
-  pinMode(3,OUTPUT); // Step
-  pinMode(4,OUTPUT); // Dir
-  digitalWrite(2,HIGH); // Set Enable low
+  Serial.begin(9600);
+  pinMode(ENABLE_PIN,OUTPUT); // Enable
+  pinMode(STEP_PIN,OUTPUT); // Step
+  pinMode(DIR_PIN,OUTPUT); // Dir
+  digitalWrite(ENABLE_PIN,HIGH); // Set Enable off
+  
   SPI.begin();        // Init SPI bus
   mfrc522.PCD_Init(); // Init MFRC522 card
   mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max); //Set Max Gain ?working?
@@ -48,23 +38,12 @@ void loop() {
     if ( ! mfrc522.PICC_ReadCardSerial())
         return;
     
-    // Show some details of the PICC (that is: the tag/card)
-    Serial.print(F("Card UID: "));
-    dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
-    Serial.println();
+    dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size); //card to cardread
 
 
     //If they're the same print match
     if(compare_arrays(cards, cardread)){
-      Serial.println("Match!");
-      digitalWrite(2, LOW);
-      for(int i=0; i<=200; i++){
-        digitalWrite(3,HIGH); // Output high
-        delay(5); // Wait
-        digitalWrite(3,LOW); // Output low
-        delay(5); // Wait
-      }
-      digitalWrite(2, HIGH);
+      motorDrive();
     }
     
     
@@ -76,7 +55,6 @@ void loop() {
 void dump_byte_array(byte *buffer, byte bufferSize) {
     for (byte i = 0; i < bufferSize; i++) {
         cardread[i] = buffer[i];
-        Serial.print(cardread[i]);
     }
 }
 
@@ -99,4 +77,28 @@ boolean compare_arrays(String master[], byte readcard[]){
   }
    return false;
 }
+
+void motorDrive(){
+  digitalWrite(ENABLE_PIN, LOW);
+  digitalWrite(DIR_PIN, HIGH);
+    
+  for(int i=0; i<=200; i++){
+    digitalWrite(STEP_PIN,HIGH); // Output high
+    delay(5); // Wait
+    digitalWrite(STEP_PIN,LOW); // Output low
+    delay(5); // Wait
+  }
+  
+  digitalWrite(DIR_PIN, LOW);
+  
+  for(int i=0; i<=200; i++){
+    digitalWrite(STEP_PIN,HIGH); // Output high
+    delay(5); // Wait
+    digitalWrite(STEP_PIN,LOW); // Output low
+    delay(5); // Wait
+  }
+  
+  digitalWrite(ENABLE_PIN, HIGH);
+  }
+
 
